@@ -9,6 +9,8 @@ import threading
 
 from bisect import bisect_left
 from scipy.optimize import newton
+from scipy.interpolate import interp1d
+
 from talib import RSI
 
 sio = socketio.Client()
@@ -120,18 +122,20 @@ class Strategy(socketio.ClientNamespace):
 
             returns = np.linspace(-.02, .02, 100)
             times, closes = zip(*sorted(self.candle[sym].items()))
-            hypo_levels = [self.hypo_rsi(closes, r) for r in returns]
-            ladder = [('B', 30), ('S', 70)]
+            rsi_data = [self.hypo_rsi(closes, r) for r in returns]
 
-            for side, rsi in ladder:
-                try:
-                    i = max(0, bisect_left(hypo_levels, rsi))
-                    ret = newton(lambda x: self.hypo_rsi(closes, x) - rsi, returns[i])
-                    price = tick_size * round(closes[-1] * (1 + ret) / tick_size)
-                    self.quotes[sym][side] = price
+            func = interp1d(rsi_data, returns, kind='cubic')
 
-                except Exception as e:
-                    print(f'failure to calculate ladder for {sym} and RSI {rsi}: {e}')
+            try:
+                bid_return = float(func(30))
+                ask_return = float(func(70))
+                bid = tick_size * round(closes[-1] * (1 + bid_return) / tick_size)
+                ask = tick_size * round(closes[-1] * (1 + ask_return) / tick_size)
+                self.quotes[sym]['B'] = bid
+                self.quotes[sym]['S'] = ask
+
+            except Exception as e:
+                print(f'failure to calculate ladder for {sym}: {e}')
 
         if self.connected:
             try:
