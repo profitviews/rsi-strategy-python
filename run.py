@@ -7,10 +7,7 @@ import pytz
 import socketio
 import threading
 
-from bisect import bisect_left
-from scipy.optimize import newton
 from scipy.interpolate import interp1d
-
 from talib import RSI
 
 sio = socketio.Client()
