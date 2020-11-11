@@ -41,6 +41,6 @@ pip install -r requirements.txt
 python demo.py
 ```
 
-![](https://cloud.profitview.net/misc/stream-bitmex-trades.gif)
+![](https://cloud.profitview.net/misc/stream-trades.gif)
 
 
